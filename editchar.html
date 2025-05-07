@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Character Loader</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="styles/charadex.css">
+  <link href="https://fonts.googleapis.com/css?family=Montserrat:400|Comfortaa:500" rel="stylesheet">
+</head>
+<body>
+
+<div class="container my-3">
+  <h2>Load Character</h2>
+  <input type="text" id="nameInput" class="form-control" placeholder="Enter character name">
+  <button class="btn btn-primary mt-2" onclick="loadCharacter()">Load</button>
+  <p id="status" class="mt-2 text-muted"></p>
+</div>
+
+<ul class="row no-gutters list list-unstyled m-n2" id="charadex-gallery"></ul>
+
+<template id="charadex-template">
+  <li class="col-12 p-2" id="charadex-card">
+    <div class="card">
+      <input type="hidden" class="row-index" />
+      <h2 class="card-header text-center p-4">
+        <a class="cardlink name"></a>
+      </h2>
+      <div class="px-md-5 pt-md-5 p-4">
+        <div class="row no-gutters">
+          <div class="col-md-5 p-3">
+            <img class="image img-fluid" src="" style="max-width: 250px;min-width: 50%;">
+          </div>
+          <div class="col-md-7 p-3">
+            <div class="d-flex justify-content-between mb-2">
+              <b class="text-muted">Owner</b>
+              <span class="editable owner" data-key="Owner"></span>
+              <button class="btn btn-sm btn-secondary ml-2" onclick="makeEditable(this, 'owner')">Edit</button>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+              <b class="text-muted">Artist</b>
+              <span class="editable artist" data-key="Artist"></span>
+              <button class="btn btn-sm btn-secondary ml-2" onclick="makeEditable(this, 'artist')">Edit</button>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+              <b class="text-muted">Campaign</b>
+              <span class="editable campaign" data-key="Campaign"></span>
+              <button class="btn btn-sm btn-secondary ml-2" onclick="makeEditable(this, 'campaign')">Edit</button>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+              <b class="text-muted">Aliases</b>
+              <span class="editable aliases" data-key="Aliases"></span>
+              <button class="btn btn-sm btn-secondary ml-2" onclick="makeEditable(this, 'aliases')">Edit</button>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+              <b class="text-muted">Traits</b>
+              <span class="editable traits" data-key="Traits"></span>
+              <button class="btn btn-sm btn-secondary ml-2" onclick="makeEditable(this, 'traits')">Edit</button>
+            </div>
+            <div class="mb-2">
+              <b class="text-muted">About</b>
+              <div class="editable about" data-key="About"></div>
+              <button class="btn btn-sm btn-secondary mt-1" onclick="makeEditable(this, 'about')">Edit</button>
+            </div>
+            <div class="mb-2">
+              <b class="text-muted">Backstory</b>
+              <div class="editable backstory" data-key="Backstory"></div>
+              <button class="btn btn-sm btn-secondary mt-1" onclick="makeEditable(this, 'backstory')">Edit</button>
+            </div>
+            <button class="btn btn-success mt-3" onclick="saveChanges()">Save Changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </li>
+</template>
+
+<script>
+console.log("[test] JavaScript is running!");
+const sheetURL = "https://docs.google.com/spreadsheets/d/1wE0E71gZmVsa1Rs68JpfsxOqeNVAN6yrNmMhTfa7a6s/export?format=csv&gid=1495041517";
+
+async function fetchSheetData() {
+  console.log("[fetchSheetData] Fetching data from sheet...");
+  const response = await fetch(sheetURL);
+  const text = await response.text();
+  const rows = text.trim().split("\n").map(row => row.split(","));
+  const headers = rows[0].map(h => h.trim().replace(/^"|"$/g, ""));
+  const data = rows.slice(1).map((row, i) => {
+    const obj = {};
+    headers.forEach((h, j) => {
+      obj[h] = (row[j] || "").trim().replace(/^"|"$/g, "");
+    });
+    obj.__rowIndex = i + 2; // include header row offset
+    return obj;
+  });
+  console.log("[fetchSheetData] Parsed data:", data);
+  return data;
+}
+
+async function loadCharacter() {
+  const nameInput = document.getElementById("nameInput").value.trim().toLowerCase();
+  const gallery = document.getElementById("charadex-gallery");
+  const template = document.getElementById("charadex-template");
+  const status = document.getElementById("status");
+
+  status.textContent = "🔄 Searching...";
+  console.log(`[loadCharacter] Searching for: ${nameInput}`);
+  const data = await fetchSheetData();
+  const match = data.find(row => (row["Name"] || "").toLowerCase() === nameInput);
+
+  gallery.innerHTML = "";
+  if (!match) {
+    console.warn("[loadCharacter] Character not found.");
+    status.textContent = "Character not found.";
+    return;
+  }
+
+  // Log the row that is being fetched
+  console.log("[loadCharacter] Fetched row:", match);
+
+  const clone = document.importNode(template.content, true);
+  clone.querySelector(".name").textContent = match.Name || "";
+  clone.querySelector(".image").src = match["Image URL"] || "";
+  clone.querySelector(".owner").textContent = match.Owner || "";
+  clone.querySelector(".artist").textContent = match.Artist || "";
+  clone.querySelector(".campaign").textContent = match.Campaign || "";
+  clone.querySelector(".aliases").textContent = match.Aliases || "";
+  clone.querySelector(".traits").textContent = match.Traits || "";
+  clone.querySelector(".about").textContent = match.About || "";
+  clone.querySelector(".backstory").textContent = match.Backstory || "";
+  clone.querySelector(".row-index").value = match.__rowIndex;
+
+  console.log(`[loadCharacter] Loaded character "${match.Name}" at row ${match.__rowIndex}`);
+  gallery.appendChild(clone);
+  status.textContent = "✅ Character loaded!";
+}
+
+function makeEditable(button, className) {
+  const container = button.previousElementSibling;
+  const isDiv = container.tagName === "DIV";
+  const value = container.textContent;
+  const input = isDiv ? document.createElement("textarea") : document.createElement("input");
+  input.value = value;
+  input.className = "form-control";
+  container.replaceWith(input);
+  button.textContent = "Save";
+  button.onclick = () => {
+    const replacement = isDiv ? document.createElement("div") : document.createElement("span");
+    replacement.className = `editable ${className}`;
+    replacement.dataset.key = container.dataset.key || input.dataset.key;
+    replacement.textContent = input.value;
+    input.replaceWith(replacement);
+    button.textContent = "Edit";
+    button.onclick = () => makeEditable(button, className);
+  };
+}
+
+async function saveChanges() {
+  const card = document.querySelector("#charadex-gallery li");
+  const editableElements = card.querySelectorAll(".editable");
+  const name = card.querySelector(".name")?.textContent.trim();
+
+  console.log("[saveChanges] Starting save process...");
+  if (!name) {
+    console.error("[saveChanges] Missing character name!");
+    alert("Character name is missing. Cannot save.");
+    return;
+  }
+
+  const data = { characterName: name };
+  editableElements.forEach(el => {
+    const key = el.dataset.key;
+    const value = el.textContent.trim();
+    if (key) {
+      data[key] = value;
+      console.log(`[saveChanges] Prepared field: ${key} = "${value}"`);
+    }
+  });
+
+  console.log("[saveChanges] Final payload:", data);
+
+  try {
+    const res = await fetch("https://script.google.com/macros/s/AKfycbwLlV7HuI700GsA48wUixCdl2AdTjSQmggkdXL0_pNVFwVDMgXgWVlwO_6lkkNK0Pwg/exec", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams(data)
+    });
+
+    if (!res.ok) {
+      throw new Error(`Server responded with status ${res.status}`);
+    }
+
+    const result = await res.json();
+    console.log("[saveChanges] Server response:", result);
+    alert(result.message || "Update complete!");
+  } catch (err) {
+    console.error("[saveChanges] Fetch error:", err);
+    alert("❌ Failed to save changes: " + err.message);
+  }
+}
+
+</script>
+
+
+
+
+
+</body>
+</html>
