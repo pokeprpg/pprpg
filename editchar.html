@@ -180,7 +180,7 @@ async function saveChanges() {
   console.log("[saveChanges] Final payload:", data);
 
   try {
-    const res = await fetch("https://script.google.com/macros/s/AKfycb.../exec", {
+    const res = await fetch("https://script.google.com/macros/s/AKfycbwLlV7HuI700GsA48wUixCdl2AdTjSQmggkdXL0_pNVFwVDMgXgWVlwO_6lkkNK0Pwg/exec", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams(data)
