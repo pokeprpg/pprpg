@@ -167,23 +167,25 @@ async function saveChanges() {
     return;
   }
 
-  const data = { characterName: name };
+  const updateData = {};
   editableElements.forEach(el => {
     const key = el.dataset.key;
     const value = el.textContent.trim();
     if (key) {
-      data[key] = value;
+      updateData[key] = value;
       console.log(`[saveChanges] Prepared field: ${key} = "${value}"`);
     }
   });
 
-  console.log("[saveChanges] Final payload:", data);
+  console.log("[saveChanges] Final payload:", updateData);
 
   try {
-    const res = await fetch("https://script.google.com/macros/s/AKfycbwLlV7HuI700GsA48wUixCdl2AdTjSQmggkdXL0_pNVFwVDMgXgWVlwO_6lkkNK0Pwg/exec", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams(data)
+    const res = await fetch(`https://sheetdb.io/api/v1/ogceveyvy677i/Name/${encodeURIComponent(name)}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ data: updateData })
     });
 
     if (!res.ok) {
@@ -192,7 +194,7 @@ async function saveChanges() {
 
     const result = await res.json();
     console.log("[saveChanges] Server response:", result);
-    alert(result.message || "Update complete!");
+    alert("✅ Update complete!");
   } catch (err) {
     console.error("[saveChanges] Fetch error:", err);
     alert("❌ Failed to save changes: " + err.message);
