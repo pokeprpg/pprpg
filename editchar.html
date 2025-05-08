@@ -182,9 +182,13 @@ async function saveChanges() {
   try {
     const res = await fetch("https://script.google.com/macros/s/AKfycbwLlV7HuI700GsA48wUixCdl2AdTjSQmggkdXL0_pNVFwVDMgXgWVlwO_6lkkNK0Pwg/exec", {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      mode: "no-cors",  // <- Crucial
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
       body: new URLSearchParams(data)
     });
+    alert("✅ Data sent! Note: Can't read response because of no-cors.");
 
     if (!res.ok) {
       throw new Error(`Server responded with status ${res.status}`);
